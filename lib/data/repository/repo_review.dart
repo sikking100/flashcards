@@ -14,8 +14,10 @@ abstract class IRepoReview {
   Future<QuerySnapshot<Map<String, dynamic>>> today();
 
   ///left, right, top, bottom
-  Future<void> swipe({required String id, required String direction, required int inter, required int reps});
-  Future<void> notknow({required String id, required int reviewCount});
+  Future<void> swipe({required String id, required String direction});
+  Future<void> notknow({required String id});
+  Future<void> update({required String id, required String front, required String back});
+  Future<void> delete({required String id});
 }
 
 class RepoReview implements IRepoReview {
@@ -42,43 +44,69 @@ class RepoReview implements IRepoReview {
 
   /// left, right, top, bottom
   @override
-  Future<void> swipe({required String id, required String direction, required int inter, required int reps}) {
+  Future<void> swipe({required String id, required String direction}) {
     final now = DateTime.now();
-    int interval = 0;
-    int nextReview = 0;
+
     if (direction == 'left') {
-      interval = 0;
-      nextReview = now.add(Duration(minutes: 10)).millisecondsSinceEpoch;
+      return _ref.doc(id).set({
+        'nextReview': now.add(Duration(minutes: 10)).millisecondsSinceEpoch,
+        'interval': 0,
+        'lastReviewed': now.millisecondsSinceEpoch,
+        'reviewCount': FieldValue.increment(1),
+      }, SetOptions(merge: true));
     }
 
     if (direction == 'right') {
-      interval = 1;
-      nextReview = now.add(Duration(days: interval)).millisecondsSinceEpoch;
-      reps += 1;
+      return _ref.doc(id).set({
+        'nextReview': now.add(Duration(days: 1)).millisecondsSinceEpoch,
+        'interval': 1,
+        'lastReviewed': now.millisecondsSinceEpoch,
+        'reps': FieldValue.increment(1),
+      }, SetOptions(merge: true));
     }
 
-    if (direction == 'top') {
-      if (inter == 0) {
+    return store.runTransaction((transaction) async {
+      final oldData = await transaction.get(_ref.doc(id));
+      final oldInterval = oldData.data()?['interval'] as int? ?? 0;
+      final oldReps = oldData.data()?['reps'] as int? ?? 0;
+      final oldRevCount = oldData.data()?['reviewCount'] as int? ?? 0;
+      int interval = 0;
+      int nextReview = 0;
+      int revCount = oldRevCount;
+      int reps = oldReps;
+
+      if (oldInterval == 0) {
         interval = 3;
       } else {
-        interval = inter * 2;
+        interval = oldInterval * 2;
       }
       reps += 1;
+      revCount = oldRevCount > 0 ? oldRevCount - 1 : 0;
       nextReview = now.add(Duration(days: interval)).millisecondsSinceEpoch;
-    }
 
-    return _ref.doc(id).set({
-      'nextReview': nextReview,
-      'interval': interval,
-      'lastReviewed': now.millisecondsSinceEpoch,
-      'reps': reps,
-    }, SetOptions(merge: true));
+      transaction.set(_ref.doc(id), {
+        'nextReview': nextReview,
+        'interval': interval,
+        'lastReviewed': now.millisecondsSinceEpoch,
+        'reps': reps,
+        'reviewCount': revCount,
+      }, SetOptions(merge: true));
+    });
   }
 
   @override
-  Future<void> notknow({required String id, required int reviewCount}) {
+  Future<void> notknow({required String id}) {
     final now = DateTime.now();
-    reviewCount += 1;
-    return _ref.doc(id).set({'lastReviewed': now.millisecondsSinceEpoch, 'reviewCount': reviewCount}, SetOptions(merge: true));
+    return _ref.doc(id).set({'lastReviewed': now.millisecondsSinceEpoch, 'reviewCount': FieldValue.increment(1)}, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> update({required String id, required String front, required String back}) {
+    return _ref.doc(id).set({'front': front, 'back': back}, SetOptions(merge: true));
+  }
+
+  @override
+  Future<void> delete({required String id}) {
+    return _ref.doc(id).delete();
   }
 }

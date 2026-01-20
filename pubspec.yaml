@@ -48,6 +48,10 @@ dependencies:
   simple_logger: ^1.10.0
   flutter_card_swiper: ^7.2.0
   http: ^1.6.0
+  camera: ^0.11.2+1
+  path_provider: ^2.1.5
+  google_ml_kit: ^0.20.0
+  showcaseview: ^5.0.1
 
 dev_dependencies:
   flutter_test:

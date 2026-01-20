@@ -19,4 +19,9 @@ class MvDeckAction {
     await ref.read(repoDeckProvider).delete(id);
     ref.read(deckStateNotifierProvider.notifier).refresh();
   }
+
+  Future<void> update(String id, String title) async {
+    await ref.read(repoDeckProvider).update(id, title);
+    ref.read(deckStateNotifierProvider.notifier).refresh();
+  }
 }

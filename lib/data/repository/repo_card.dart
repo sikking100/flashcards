@@ -57,7 +57,7 @@ class RepoCard implements IRepoCard {
 
   @override
   Future<void> update({required String idDeck, required ModelCard card}) {
-    return _ref.doc(idDeck).collection('cards').doc(card.id).set(card.toMap());
+    return _ref.doc(idDeck).collection('cards').doc(card.id).set(card.toMap(), SetOptions(merge: true));
   }
 
   @override

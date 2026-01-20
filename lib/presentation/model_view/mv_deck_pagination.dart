@@ -46,7 +46,7 @@ class DeckPaginationNotifier extends Notifier<PagingState<DocumentSnapshot, Mode
 
       state = state.copyWith(
         pages: [...?state.pages, res],
-        keys: [...?state.keys, pageKey],
+        keys: [...?state.keys, result.docs.last],
         hasNextPage: (result.docs.length) == 10,
         isLoading: false,
       );

@@ -2,6 +2,8 @@
 import 'dart:io';
 
 import 'package:flashcards/presentation/view/page_candidates.dart';
+import 'package:flashcards/presentation/view/page_study.dart';
+import 'package:flashcards/presentation/view/page_test.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,7 +18,7 @@ import 'package:flashcards/presentation/view/page_card_create.dart';
 import 'package:flashcards/presentation/view/page_card_detail.dart';
 import 'package:flashcards/presentation/view/page_deck_detail.dart';
 import 'package:flashcards/presentation/view/page_main.dart';
-import 'package:flashcards/presentation/view/page_study.dart';
+import 'package:flashcards/presentation/view/page_review.dart';
 
 part "router.g.dart";
 
@@ -67,13 +69,24 @@ class SettingRoute extends GoRouteData with _$SettingRoute {
   }
 }
 
-@TypedGoRoute<StudyScreenRoute>(path: '/study')
-class StudyScreenRoute extends GoRouteData with _$StudyScreenRoute {
+@TypedGoRoute<ReviewScreenRoute>(path: '/review')
+class ReviewScreenRoute extends GoRouteData with _$ReviewScreenRoute {
   final List<ModelReview> $extra;
-  StudyScreenRoute({required this.$extra});
+  ReviewScreenRoute({required this.$extra});
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return PageStudy(list: $extra);
+    return PageReview(list: $extra);
+  }
+}
+
+@TypedGoRoute<StudyScreenRoute>(path: '/study')
+class StudyScreenRoute extends GoRouteData with _$StudyScreenRoute {
+  final String idDeck;
+  final String title;
+  StudyScreenRoute({required this.idDeck, required this.title});
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return PageStudy(idDeck: idDeck, title: title);
   }
 }
 
@@ -130,5 +143,13 @@ class CandidateScreenRoute extends GoRouteData with _$CandidateScreenRoute {
   @override
   Widget build(BuildContext context, GoRouterState state) {
     return PageCandidates(file: $extra);
+  }
+}
+
+@TypedGoRoute<TestScreenRoute>(path: '/test')
+class TestScreenRoute extends GoRouteData with _$TestScreenRoute {
+  @override
+  Widget build(BuildContext context, GoRouterState state) {
+    return PageTest();
   }
 }

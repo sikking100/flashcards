@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flashcards/data/firebase/firebase.dart';
 import 'package:flashcards/data/models/model_candidate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

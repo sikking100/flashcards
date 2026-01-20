@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
 class WidgetCard extends HookWidget {
-  const WidgetCard({super.key});
+  final String question;
+  final String answer;
+  const WidgetCard({super.key, required this.question, required this.answer});
 
   @override
   Widget build(BuildContext context) {
@@ -37,13 +39,13 @@ class WidgetCard extends HookWidget {
     width: 200,
     height: 300,
     color: Colors.blue,
-    child: Center(child: Text("FRONT")),
+    child: Center(child: Text(question)),
   );
 
   Widget backCard() => Container(
     width: 200,
     height: 300,
     color: Colors.red,
-    child: Center(child: Text("BACK")),
+    child: Center(child: Text(answer)),
   );
 }

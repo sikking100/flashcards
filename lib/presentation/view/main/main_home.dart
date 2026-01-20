@@ -22,7 +22,7 @@ class MainHome extends ConsumerWidget {
                 Text('You have ${data.length} cards to study today'),
                 FilledButton(
                   onPressed: () async {
-                    final result = await StudyScreenRoute($extra: data).push(context);
+                    final result = await ReviewScreenRoute($extra: data).push(context);
                     if (result != null) ref.invalidate(todayStudyProvider);
                   },
                   child: Text('Start Learning'),

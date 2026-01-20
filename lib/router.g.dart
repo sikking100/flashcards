@@ -8,12 +8,14 @@ part of 'router.dart';
 
 List<RouteBase> get $appRoutes => [
   $mainScreenRoute,
+  $reviewScreenRoute,
   $studyScreenRoute,
   $cardDetailScreenRoute,
   $cardCreateScreenRoute,
   $deckDetailScreenRoute,
   $cardBulkScreenRoute,
   $candidateScreenRoute,
+  $testScreenRoute,
 ];
 
 RouteBase get $mainScreenRoute => ShellRouteData.$route(
@@ -110,17 +112,19 @@ mixin _$SettingRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-RouteBase get $studyScreenRoute =>
-    GoRouteData.$route(path: '/study', factory: _$StudyScreenRoute._fromState);
+RouteBase get $reviewScreenRoute => GoRouteData.$route(
+  path: '/review',
+  factory: _$ReviewScreenRoute._fromState,
+);
 
-mixin _$StudyScreenRoute on GoRouteData {
-  static StudyScreenRoute _fromState(GoRouterState state) =>
-      StudyScreenRoute($extra: state.extra as List<ModelReview>);
+mixin _$ReviewScreenRoute on GoRouteData {
+  static ReviewScreenRoute _fromState(GoRouterState state) =>
+      ReviewScreenRoute($extra: state.extra as List<ModelReview>);
 
-  StudyScreenRoute get _self => this as StudyScreenRoute;
+  ReviewScreenRoute get _self => this as ReviewScreenRoute;
 
   @override
-  String get location => GoRouteData.$location('/study');
+  String get location => GoRouteData.$location('/review');
 
   @override
   void go(BuildContext context) => context.go(location, extra: _self.$extra);
@@ -136,6 +140,37 @@ mixin _$StudyScreenRoute on GoRouteData {
   @override
   void replace(BuildContext context) =>
       context.replace(location, extra: _self.$extra);
+}
+
+RouteBase get $studyScreenRoute =>
+    GoRouteData.$route(path: '/study', factory: _$StudyScreenRoute._fromState);
+
+mixin _$StudyScreenRoute on GoRouteData {
+  static StudyScreenRoute _fromState(GoRouterState state) => StudyScreenRoute(
+    idDeck: state.uri.queryParameters['id-deck']!,
+    title: state.uri.queryParameters['title']!,
+  );
+
+  StudyScreenRoute get _self => this as StudyScreenRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/study',
+    queryParams: {'id-deck': _self.idDeck, 'title': _self.title},
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
 }
 
 RouteBase get $cardDetailScreenRoute => GoRouteData.$route(
@@ -281,4 +316,27 @@ mixin _$CandidateScreenRoute on GoRouteData {
   @override
   void replace(BuildContext context) =>
       context.replace(location, extra: _self.$extra);
+}
+
+RouteBase get $testScreenRoute =>
+    GoRouteData.$route(path: '/test', factory: _$TestScreenRoute._fromState);
+
+mixin _$TestScreenRoute on GoRouteData {
+  static TestScreenRoute _fromState(GoRouterState state) => TestScreenRoute();
+
+  @override
+  String get location => GoRouteData.$location('/test');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
 }

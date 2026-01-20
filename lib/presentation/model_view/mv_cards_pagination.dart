@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:flashcards/data/models/model_card.dart';
 import 'package:flashcards/data/repository/repo_card.dart';
+import 'package:simple_logger/simple_logger.dart';
 
 final cardStateNotifierProvider = NotifierProvider.family<CardPaginationNotifier, PagingState<DocumentSnapshot, ModelCard>, String>(
   CardPaginationNotifier.new,
@@ -43,7 +44,9 @@ class CardPaginationNotifier extends Notifier<PagingState<DocumentSnapshot, Mode
 
     try {
       final pageKey = state.keys?.last as DocumentSnapshot<Map<String, dynamic>>;
+
       final result = await ref.read(repoCardProvider).finds(idDeck: idDeck, lastDoc: pageKey);
+
       if (result.docs.isEmpty) {
         state = state.copyWith(hasNextPage: false, isLoading: false);
         return;
@@ -52,7 +55,7 @@ class CardPaginationNotifier extends Notifier<PagingState<DocumentSnapshot, Mode
 
       state = state.copyWith(
         pages: [...?state.pages, res],
-        keys: [...?state.keys, pageKey],
+        keys: [...?state.keys, result.docs.last],
         hasNextPage: (result.docs.length) == 10,
         isLoading: false,
       );

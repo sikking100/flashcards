@@ -13,7 +13,7 @@ final repoDeckProvider = Provider<IRepoDeck>((ref) {
 abstract class IRepoDeck {
   Future<QuerySnapshot<Map<String, dynamic>>> finds([DocumentSnapshot<Map<String, dynamic>>? lastDoc]);
   Future<DocumentSnapshot<Map<String, dynamic>>> find(String id);
-  Future<void> update(String title);
+  Future<void> update(String id, String title);
   Future<void> create(String title);
   Future<void> delete(String id);
 }
@@ -46,9 +46,8 @@ class RepoDeck implements IRepoDeck {
   }
 
   @override
-  Future<void> update(String title) {
-    // TODO: implement update
-    throw UnimplementedError();
+  Future<void> update(String id, String title) {
+    return _ref.doc(id).update({'title': title});
   }
 
   @override

@@ -24,6 +24,7 @@ class MyApp extends ConsumerWidget {
           selectedItemColor: Colors.cyan,
           type: BottomNavigationBarType.fixed,
         ),
+        listTileTheme: ListTileThemeData(contentPadding: EdgeInsets.only(right: 8, left: 16)),
       ),
     );
   }

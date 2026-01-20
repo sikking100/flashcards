@@ -113,6 +113,10 @@ class _CardBulkingInputState extends State<CardBulkingInput> with AutomaticKeepA
     final focus1 = useFocusNode();
     final focus2 = useFocusNode();
     useEffect(() {
+      focus1.requestFocus();
+      return null;
+    }, []);
+    useEffect(() {
       question.text = widget.card.front;
       answer.text = widget.card.back;
       return null;
@@ -127,7 +131,7 @@ class _CardBulkingInputState extends State<CardBulkingInput> with AutomaticKeepA
               TextField(
                 focusNode: focus1,
                 textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(label: Text('Question')),
+                decoration: InputDecoration(label: Text('Front')),
                 onChanged: (value) => widget.onChanged(widget.card.copyWith(front: value)),
                 textInputAction: TextInputAction.next,
                 onSubmitted: (value) {
@@ -137,7 +141,7 @@ class _CardBulkingInputState extends State<CardBulkingInput> with AutomaticKeepA
               TextField(
                 focusNode: focus2,
                 textCapitalization: TextCapitalization.words,
-                decoration: InputDecoration(label: Text('Answer')),
+                decoration: InputDecoration(label: Text('Back')),
                 onChanged: (value) => widget.onChanged(widget.card.copyWith(back: value)),
               ),
             ],
