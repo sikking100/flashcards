@@ -60,7 +60,7 @@ class StudyNotifier extends Notifier<AsyncValue<List<ModelCard>>> {
 
   @override
   AsyncValue<List<ModelCard>> build() {
-    mode = StudyMode.values[2];
+    mode = StudyMode.values[3];
     init();
     return AsyncValue.loading();
   }

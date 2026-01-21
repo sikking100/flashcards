@@ -29,7 +29,7 @@ class PageStudy extends ConsumerWidget {
             StudyMode.frontToBack => StudySwipe(cards: data, mode: notifier.mode, idDeck: idDeck),
             StudyMode.backToFront => StudySwipe(cards: data, mode: notifier.mode, idDeck: idDeck),
             StudyMode.multipleChoice => StudyMultipleChoice(cards: data, mode: notifier.mode, idDeck: idDeck),
-            _ => Center(child: Text('Unknown Study Mode')),
+            _ => StudyTyping(cards: data, mode: notifier.mode, idDeck: idDeck),
           };
         },
         error: (error, stackTrace) => Center(child: Text('$error')),
@@ -165,46 +165,27 @@ class _StudySwipeState extends ConsumerState<StudySwipe> {
   }
 }
 
+(List<bool>, void Function(int index, bool isLoading)) useMultiLoading(int count) {
+  final states = useState<List<bool>>(List.filled(count, false));
+
+  void setLoading(int index, bool isLoading) {
+    final newStates = [...states.value];
+    newStates[index] = isLoading;
+    states.value = newStates;
+  }
+
+  return (states.value, setLoading);
+}
+
 class StudyMultipleChoice extends HookConsumerWidget {
   final List<ModelCard> cards;
   final StudyMode mode;
   final String idDeck;
   const StudyMultipleChoice({super.key, required this.cards, required this.mode, required this.idDeck});
 
-  void onClick(
-    BuildContext context,
-    WidgetRef ref,
-    ValueNotifier<bool> loading,
-    String correctAnswer,
-    ModelCard card,
-    String choice,
-    ValueNotifier<int> index,
-  ) async {
-    loading.value = true;
-    final isCorrect = choice == correctAnswer;
-    loading.value = true;
-    await ref.read(mvStudyProvider).swipe(id: card.id ?? '', direction: isCorrect ? 'right' : 'left');
-    if (context.mounted) {
-      await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(isCorrect ? 'Correct' : 'Incorrect'),
-          content: Text('The correct answer is: $correctAnswer'),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text('Close'))],
-        ),
-      );
-    }
-    if (index.value == cards.length - 1) {
-      ref.read(studyNotifierProvider(idDeck).notifier).next();
-      index.value = 0;
-    } else {
-      index.value += 1;
-    }
-    loading.value = false;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    SimpleLogger().info('rebuild');
     final index = useState(0);
     if (cards.isEmpty) return Center(child: Text('No cards to study'));
     final prompt = buildPrompt(cards[index.value], mode, cards);
@@ -214,96 +195,51 @@ class StudyMultipleChoice extends HookConsumerWidget {
         SizedBox(height: 24),
         HookBuilder(
           builder: (context) {
-            final loading0 = useState(false);
-            final loading1 = useState(false);
-            final loading2 = useState(false);
-            final loading3 = useState(false);
-
+            final (loadingStates, setLoading) = useMultiLoading(prompt.choices?.length ?? 0);
+            final onTap = useCallback((String choice, int choiceIndex) async {
+              final isCorrect = choice == prompt.correctAnswer;
+              setLoading(choiceIndex, true);
+              await ref.read(mvStudyProvider).swipe(id: cards[index.value].id ?? '', direction: isCorrect ? 'right' : 'left');
+              if (context.mounted) {
+                await showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Text(isCorrect ? 'Correct' : 'Incorrect'),
+                    content: Text('The correct answer is: ${prompt.correctAnswer}'),
+                    actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text('Close'))],
+                  ),
+                );
+              }
+              if (index.value == cards.length - 1) {
+                ref.read(studyNotifierProvider(idDeck).notifier).next();
+                index.value = 0;
+              } else {
+                index.value += 1;
+              }
+              setLoading(choiceIndex, false);
+              index.value += 1;
+            }, []);
             return Column(
               children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: loading0.value
-                        ? null
-                        : () => onClick(context, ref, loading0, prompt.correctAnswer, cards[index.value], prompt.choices![0], index),
-                    child: loading0.value == true ? WidgetLoading() : Text(prompt.choices![0]),
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: loading1.value
-                        ? null
-                        : () => onClick(context, ref, loading1, prompt.correctAnswer, cards[index.value], prompt.choices![1], index),
-                    child: loading1.value == true ? WidgetLoading() : Text(prompt.choices![1]),
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: loading2.value
-                        ? null
-                        : () => onClick(context, ref, loading2, prompt.correctAnswer, cards[index.value], prompt.choices![2], index),
-                    child: loading2.value == true ? WidgetLoading() : Text(prompt.choices![2]),
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: loading3.value
-                        ? null
-                        : () => onClick(context, ref, loading3, prompt.correctAnswer, cards[index.value], prompt.choices![3], index),
-                    child: loading3.value == true ? WidgetLoading() : Text(prompt.choices![3]),
-                  ),
-                ),
+                ...(prompt.choices ?? []).asMap().entries.map((entry) {
+                  final choiceIndex = entry.key;
+                  final choice = entry.value;
+                  return Padding(
+                    key: ValueKey(choice),
+                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: loadingStates[choiceIndex] ? null : () => onTap(choice, choiceIndex),
+                        child: loadingStates[choiceIndex] == true ? WidgetLoading() : Text(choice),
+                      ),
+                    ),
+                  );
+                }),
               ],
             );
           },
         ),
-        // ...(prompt.choices ?? []).asMap().entries.map((entry) {
-        //   final choiceIndex = entry.key;
-        //   final choice = entry.value;
-        //   final loading = switch (choiceIndex) {
-        //     0 => loading0,
-        //     1 => loading1,
-        //     2 => loading2,
-        //     _ => loading3,
-        //   };
-        //   return Padding(
-        //     key: ValueKey(choice),
-        //     padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        //     child: SizedBox(
-        //       width: double.infinity,
-        //       child: ElevatedButton(
-        //         onPressed: loading.value
-        //             ? null
-        //             : () async {
-        //                 final isCorrect = choice == prompt.correctAnswer;
-        //                 loading.value = true;
-        //                 // await ref.read(mvStudyProvider).swipe(id: cards[index.value].id ?? '', direction: isCorrect ? 'right' : 'left');
-        //                 // if (context.mounted) {
-        //                 //   await showDialog(
-        //                 //     context: context,
-        //                 //     builder: (context) => AlertDialog(
-        //                 //       title: Text(isCorrect ? 'Correct' : 'Incorrect'),
-        //                 //       content: Text('The correct answer is: ${prompt.correctAnswer}'),
-        //                 //       actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text('Close'))],
-        //                 //     ),
-        //                 //   );
-        //                 // }
-        //                 // loading.value[choiceIndex] = false;
-        //                 // index.value += 1;
-        //               },
-        //         child: loading.value == true ? WidgetLoading() : Text(choice),
-        //       ),
-        //     ),
-        //   );
-        // }),
         if (index.value == cards.length - 1) ...[
           SizedBox(height: 16),
           FilledButton(
@@ -315,6 +251,72 @@ class StudyMultipleChoice extends HookConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+class StudyTyping extends HookConsumerWidget {
+  final List<ModelCard> cards;
+  final StudyMode mode;
+  final String idDeck;
+
+  const StudyTyping({super.key, required this.cards, required this.mode, required this.idDeck});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final index = useState(0);
+    if (cards.isEmpty) return Center(child: Text('No cards to study'));
+    final prompt = buildPrompt(cards[index.value], mode, cards);
+    final textEditingController = useTextEditingController();
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Text('Typing Study Mode'),
+          SizedBox(height: 16),
+          Text(prompt.question, style: TextStyle(fontSize: 24)),
+          SizedBox(height: 24),
+          TextField(
+            controller: textEditingController,
+            decoration: InputDecoration(labelText: 'Your Answer'),
+          ),
+          SizedBox(height: 16),
+          HookBuilder(
+            builder: (context) {
+              final loading = useState(false);
+              return FilledButton(
+                onPressed: loading.value
+                    ? null
+                    : () async {
+                        final userAnswer = textEditingController.text.trim();
+                        loading.value = true;
+                        final isCorrect = userAnswer.toLowerCase() == prompt.correctAnswer.toLowerCase();
+                        await ref.read(mvStudyProvider).swipe(id: cards[index.value].id ?? '', direction: isCorrect ? 'right' : 'left');
+                        if (context.mounted) {
+                          await showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text(isCorrect ? 'Correct' : 'Incorrect'),
+                              content: Text('The correct answer is: ${prompt.correctAnswer}'),
+                              actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text('Close'))],
+                            ),
+                          );
+                        }
+                        textEditingController.clear();
+                        if (index.value == cards.length - 1) {
+                          ref.read(studyNotifierProvider(idDeck).notifier).next();
+                          index.value = 0;
+                        } else {
+                          index.value += 1;
+                        }
+                        loading.value = false;
+                      },
+                child: loading.value ? WidgetLoading() : Text('Submit'),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
